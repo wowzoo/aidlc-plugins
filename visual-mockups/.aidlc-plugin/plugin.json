@@ -1,0 +1,12 @@
+{
+  "name": "visual-mockups",
+  "version": "0.1.0",
+  "description": "Kiro unified agent harness. Give the mockup stages a visual surface and carry the mockup into code. At rough/refined-mockups, offer to render the approved wireframes either into Figma (a file the customer views and edits in the browser) OR into a self-contained HTML preview — or neither (markdown only), the user's choice. Persist a single mockup-visual-ref pointer (type figma|html) and, at code-generation, feed both that visual ref AND the mockup markdown to UI units. Additive: no new stages, contributions to rough-mockups (Ideation), refined-mockups (Inception), and code-generation (Construction) only. Figma path requires the `figma` MCP server plus the Figma skills (both shipped disabled/present by the installer, not by this seam) and a paid Figma plan; the HTML path needs no Figma account and no MCP server, but it does load the `frontend-design` skill. The plugin wires WHERE/WHEN in the AI-DLC workflow, not HOW to drive Figma.",
+  "author": { "name": "wowzoo" },
+  "dependencies": ["core"],
+  "aidlc": {
+    "contributes": {
+      "overlays": "contributions/"
+    }
+  }
+}
