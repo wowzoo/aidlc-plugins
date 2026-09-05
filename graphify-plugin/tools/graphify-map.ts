@@ -24,8 +24,10 @@
  *
  * Schema source of truth: measured from Graphify 0.9.54's own output, not from its prose docs —
  * the two disagree on one load-bearing point. `graph.json` is NetworkX **node-link** format:
- * {directed, multigraph, graph{built_at_commit?}, nodes[], links[], hyperedges[]}. The edge array
- * is `links`, NOT `edges` (the docs say "edges"). Node: {id, label, norm_label, file_type,
+ * {directed, multigraph, graph, nodes[], links[], hyperedges[], built_at_commit?}. The edge array
+ * is `links`, NOT `edges` (the docs say "edges"). 🔴 `built_at_commit` is **top-level** and `graph`
+ * is `{}` — an earlier reading of this placed the commit inside `graph`, which made every
+ * commit-bearing map report as having none. Node: {id, label, norm_label, file_type,
  * community, source_file, source_location, _origin, _callable?, _callable_class?, metadata?}.
  * Link: {source, target, relation, confidence, confidence_score, weight, source_file,
  * source_location, _origin, context?}.
@@ -180,7 +182,15 @@ function read(graphPath: string): Graph | null {
   }
   const byId = new Map<string, Dict>();
   for (const n of nodes) byId.set(str(n.id), n);
-  return { nodes, links, meta: (raw.graph as Dict) ?? {}, degree, byId };
+  // 🔴 `built_at_commit` sits at the TOP level, not inside `graph`. Measured: `to_json` does
+  // `data["built_at_commit"] = commit` on the same object it writes, one line below
+  // `data["hyperedges"]` — and `hyperedges` is top-level in the output. `graph` is `{}`.
+  // An earlier version of this reader looked only inside `graph`, so it never found a commit and
+  // reported "tooling gap" on graphs that carried one. Read both, top level first, so a future
+  // upstream move into `graph` still resolves.
+  const g = (raw.graph as Dict) ?? {};
+  const meta: Dict = { ...g, built_at_commit: raw.built_at_commit ?? g.built_at_commit };
+  return { nodes, links, meta, degree, byId };
 }
 
 /** A node's display name, with its file when there is one. Labels repeat across files (`toString`,
@@ -200,8 +210,12 @@ function commitRow(repoDir: string, meta: Dict): string {
   const hash = str(meta.built_at_commit);
   const isCheckout = existsSync(join(repoDir, ".git"));
   if (hash === "") {
+    // A git checkout with no commit recorded is usually the tool's FIRST build there, not a
+    // corrupted map. Measured: the tool resolves the commit with `git rev-parse HEAD` run inside
+    // the output directory, and that directory is created only afterwards — so the lookup throws on
+    // a first build and the key is omitted. A rebuild records it.
     return isCheckout
-      ? "not recorded although the tree IS a git checkout — treat as a tooling gap and re-run"
+      ? "not recorded — the tree IS a git checkout, so this is most likely the tool's first build here (it resolves the commit inside its own output directory, which does not exist yet on that run). **Rebuild and the commit appears.**"
       : "not recorded — the analysed tree is not a git checkout. Freshness rests on the tool's per-file content hashes (`graphify-out/cache/`), not on a commit";
   }
   return isCheckout

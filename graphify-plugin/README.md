@@ -51,7 +51,7 @@ prose docs. Three differences change what the slices can say:
 | what | measured |
 |---|---|
 | top-level shape | NetworkX node-link: `{directed, multigraph, graph, nodes, links, hyperedges}` — the edge array is **`links`**, and the prose docs saying "edges" are wrong |
-| project metadata | **absent** (`graph: {}` when there is no git) — the converter synthesises provenance from the graph |
+| project metadata | **absent** — `graph` is `{}` and there is no `project` block, so the converter synthesises provenance. 🔴 `built_at_commit` is **top-level**, not inside `graph`; reading it in the wrong place makes every commit-bearing map report as having none |
 | per-node summary | **none** — the AST pass is a parse, not a reading |
 | grouping | `community` integers from edge density, **unnamed** unless a separate LLM naming pass runs — which algorithm runs depends on the tool env's Python version |
 | edge confidence | `confidence` ∈ `EXTRACTED` / `INFERRED` / `AMBIGUOUS` plus `confidence_score` |
