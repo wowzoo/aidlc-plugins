@@ -1,4 +1,4 @@
-# code-map — start `reverse-engineering` from a map, not a cold scan
+# ua-plugin — start `reverse-engineering` from a map, not a cold scan
 
 An AI-DLC plugin. When a workspace carries a machine-produced structural map of an
 existing codebase built by a tool outside AI-DLC — Understand-Anything writes one
@@ -79,7 +79,7 @@ AIDLC_PLUGIN_ROOT=<this dir> AIDLC_PROJECT_DIR=<workspace> AIDLC_HARNESS_DIR=.ki
 ```
 
 `compose` prints nothing on success. Judge by outcome, not exit code: two
-`<!-- plugin:code-map:… -->` sentinels and two `### Step Nb (code-map)` headings in
+`<!-- plugin:ua-plugin:… -->` sentinels and one `### Step Nb (ua-plugin)` heading in
 the stage file, `tools/ua-code-map.ts` present, `stage-graph.json` unchanged, and
 `doctor` / `graph compile --check` the same as before.
 

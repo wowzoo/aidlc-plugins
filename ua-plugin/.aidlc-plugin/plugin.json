@@ -1,5 +1,5 @@
 {
-  "name": "code-map",
+  "name": "ua-plugin",
   "version": "0.1.0",
   "description": "Let reverse-engineering (2.1) start from an external structural map instead of a cold scan. When a workspace carries a machine-produced code map built outside AI-DLC (Understand-Anything writes one under <repo>/.ua/), this plugin tells the Developer code scan to use it as an INDEX for deciding which files to open, and tells the Architect synthesis to confirm every borrowed claim in the source file before it reaches a CodeKB artifact. Additive and overlay-only: no new stages, one contribution to reverse-engineering (Inception), plus the converter tool that turns a map into the workspace knowledge overlay. The map is evidence, never truth, and it never replaces reverse-engineering — that stage still owns the CodeKB store, whose freshness fingerprint only the tool can mint. Conditional throughout: with no map present nothing here asks for one and its absence is not a gap.",
   "author": { "name": "wowzoo" },

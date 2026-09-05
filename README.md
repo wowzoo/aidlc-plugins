@@ -1,13 +1,19 @@
 # aidlc-plugins — authoring form and apply procedure
 
-The authoring form of two AI-DLC plugins, plus the drivers that put them on a
+The authoring form of three AI-DLC plugins, plus the drivers that put them on a
 tree or shell and judge the result.
 
 ```
 visual-mockups/     gives the mockup stages a visual surface and carries the mockup into code
-code-map/           lets reverse-engineering (2.1) use an external structural map as an index
+ua-plugin/          lets reverse-engineering (2.1) use an external structural map as an index — Understand-Anything
+graphify-plugin/    the same seam for Graphify — an ALTERNATIVE to ua-plugin, not a layer on it
 scripts/            apply and judgement drivers
 ```
+
+🔴🔴 **`ua-plugin` and `graphify-plugin` are alternatives.** They contribute the same anchor of the
+same stage for two different tools, so a tree carrying both hands the Developer two indexes with two
+provenance chains. **Compose exactly one of them into a tree.** Nothing enforces it — each owns its
+own sentinel, so compose will happily land both. Choosing is what the `for P in …` list below is for.
 
 | Driver | What it does |
 |---|---|
@@ -61,7 +67,7 @@ HD=.kiro            # .claude for a claude tree/shell
 ASSETS=<your asset tree>   # see "Prerequisites are supplied by the installer" below
 
 # 1. 🔴 PRE-FLIGHT — measure that anchors resolve AND bind to the intended step
-for P in visual-mockups code-map; do
+for P in visual-mockups ua-plugin; do
   uv run python scripts/check-plugin-anchors.py --pre "$TARGET" --plugin-root "$P"
 done
 #    🔴🔴 "resolved" is not "bound correctly" — **read the titles.** A stage that drops
@@ -72,7 +78,7 @@ done
 #    not in the tree.
 
 # 2. PLUGIN_ROOT is a /tmp copy (never hand the authoring form to compose directly)
-for P in visual-mockups code-map; do
+for P in visual-mockups ua-plugin; do
   R=/tmp/pr-$P; rm -rf $R; cp -R $P $R
   AIDLC_PLUGIN_ROOT=$R AIDLC_PROJECT_DIR="$TARGET" AIDLC_HARNESS_DIR=$HD bun $R/hooks/compose.ts
 done
@@ -87,7 +93,7 @@ done
 uv run python scripts/merge-mcp-registry-kiro.py   "$TARGET" --src "$ASSETS/custom-skills/mcp.json" --apply
 uv run python scripts/merge-mcp-registry-claude.py "$TARGET" --src "$ASSETS/custom-skills/mcp.json" --apply
 
-#    3b. code-map: 1 skill + UNDERSTANDING_GUIDE.md + shared knowledge + two prose pointers.
+#    3b. ua-plugin: 1 skill + UNDERSTANDING_GUIDE.md + shared knowledge + two prose pointers.
 #        🔴 None of these four has a channel in `contributes` (no `skills` key · `memory` is
 #        refused by the validator · a root file is not a content dir · `knowledge` is a valid
 #        key but the pinned compose installs only stages, sensors and tools).
@@ -95,7 +101,7 @@ uv run python scripts/merge-mcp-registry-claude.py "$TARGET" --src "$ASSETS/cust
 uv run python "$ASSETS/scripts/apply_external_code_map.py" "$TARGET"
 
 # 4. 🔴 Judge by the artifact — exit code is not a judgement
-for P in visual-mockups code-map; do
+for P in visual-mockups ua-plugin; do
   uv run python scripts/check-plugin-anchors.py --post "$TARGET" --plugin-root "$P"
 done
 ```
@@ -107,7 +113,7 @@ done
 knowledge · tools`; `memory` is explicitly refused by the validator, and the
 compose hook pinned here installs only **`stages`, `sensors` and `tools`**. So the
 prerequisites — 4 skills and 2 MCP entries for `visual-mockups`, and the skill,
-guide, knowledge file and prose pointers for `code-map` — are landed by whoever
+guide, knowledge file and prose pointers for `ua-plugin` — are landed by whoever
 applies the plugin, as in step 3.
 
 Those prerequisite assets are **not part of this repository**: they are owned
@@ -127,7 +133,8 @@ mockup path, which needs no MCP server — but it still needs the
 | prose splice landed | `check-plugin-anchors.py --post` | per file, **sentinels = fragments×2** (open+close) · **`### Step Nb` headings owned by the plugin = fragment count**. 🔴**Never gate on the total heading count** — that is the host stage's own numbering and upstream moves it (a hardcoded value produces false FAILs) |
 | drops | `find "$TARGET" -name '*.drops'` | **0**. Any file is a silent degrade |
 | visual-mockups seam | `produces`/`consumes` delta | `rough` produces += `mockup-visual-ref` · `refined` produces += `mockup-visual-ref-refined`, consumes += `mockup-visual-ref` · `code-generation` consumes += all 4, optional. Exact-match counts: `mockup-visual-ref` **3** / `-refined` **2** |
-| code-map | `tools/ua-code-map.ts` installed · `stage-graph.json` **unchanged** | no `adds`, so the graph does not move |
+| ua-plugin | `tools/ua-code-map.ts` installed · `stage-graph.json` **unchanged** | no `adds`, so the graph does not move |
+| graphify-plugin | `tools/graphify-map.ts` installed · `stage-graph.json` **unchanged** | same shape as the row above — read it instead of this one if you composed `ua-plugin` |
 | prerequisite skills | `diff -rq` the 4 against their owner originals | **4/4 identical** (26 files) |
 | MCP merge | server count · no stock key lost | **5 → 7** · keys overwritten **0** · 🔴**kiro marks every entry `disabled`; claude uses no `disabled` key at all** (the stock file has no such vocabulary) — the convention splits by harness, so the drivers are split |
 | 0 regressions | `doctor` · `graph compile --check` · `loadAgents` | **same doctor count as before apply · 0 failed** · exit 0. 🔴Do not record absolute doctor numbers here |
@@ -168,7 +175,7 @@ separately.)
 - **`visual-mockups` deliberately reverses two earlier positions** — it puts the
   plugin back in, and it does touch `.mcp.json`. Note the patch layer itself still
   does not touch `.mcp.json`: the union merge happens only at apply time.
-- **`code-map` does not restate the rules.** How to treat a map belongs to
+- **`ua-plugin` does not restate the rules.** How to treat a map belongs to
   `aidlc/spaces/<space>/knowledge/aidlc-shared/external-code-map.md`, and the
   delegated personas' **MANDATORY** "Delegated knowledge preflight" reads that
   directory, so the rules already reach 2.1. The plugin ships only WHERE/WHEN (the
