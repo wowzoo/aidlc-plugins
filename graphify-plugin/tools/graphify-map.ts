@@ -284,7 +284,7 @@ function architectSlice(repo: string, g: Graph): string[] {
   const ordered = [...members.entries()].sort((a, b) => b[1].length - a[1].length);
 
   L.push(
-    "Communities are the tool's own grouping (Leiden, computed from edge density — no embeddings).",
+    "Communities are the tool's own grouping — computed from edge density, with no embeddings.",
     "**They are unnamed by construction.** Each row below gives the community's size, where its",
     "files sit, and its highest-degree members, so you can decide what it is by reading those.",
     "",

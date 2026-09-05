@@ -53,7 +53,7 @@ prose docs. Three differences change what the slices can say:
 | top-level shape | NetworkX node-link: `{directed, multigraph, graph, nodes, links, hyperedges}` — the edge array is **`links`**, and the prose docs saying "edges" are wrong |
 | project metadata | **absent** (`graph: {}` when there is no git) — the converter synthesises provenance from the graph |
 | per-node summary | **none** — the AST pass is a parse, not a reading |
-| grouping | Leiden `community` integers, **unnamed** unless a separate LLM naming pass runs |
+| grouping | `community` integers from edge density, **unnamed** unless a separate LLM naming pass runs — which algorithm runs depends on the tool env's Python version |
 | edge confidence | `confidence` ∈ `EXTRACTED` / `INFERRED` / `AMBIGUOUS` plus `confidence_score` |
 | granularity | 746 nodes / 2167 links / 28 communities on the measured corpus — symbol level, not file level |
 
