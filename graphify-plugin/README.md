@@ -1,20 +1,17 @@
 # graphify-plugin — start `reverse-engineering` from a Graphify map
 
-Wires the same seam `ua-plugin` wires, for a different tool: **Graphify**
-(<https://github.com/Graphify-Labs/graphify>), which writes its map to
-`<repo>/graphify-out/graph.json`.
+Lets `reverse-engineering` (2.1) start from a map built by **Graphify**
+(<https://github.com/Graphify-Labs/graphify>), which writes it to `<repo>/graphify-out/graph.json`.
 
-🔴🔴 **This plugin and `ua-plugin` are alternatives, not layers.** They contribute the same
-anchor of the same stage for two different tools, and a tree that carried both would hand the
-Developer two indexes with two provenance chains. **Compose exactly one of them into a tree.**
-(Nothing enforces this — each plugin owns its own sentinel, so compose would happily land both.
-It is a decision, and it belongs to whoever applies the tree.)
+🔴🔴 **A tree takes exactly ONE code-map plugin.** Two of them would hand the Developer two indexes
+with two provenance chains at the same anchor. Nothing in compose enforces it — each plugin owns its
+own sentinel — so it is a decision, and it belongs to whoever applies the tree. `README.md`
+lists what is available and the prerequisite installer refuses a tree that carries two.
 
 ## Scope: Kiro unified agent harness (IDE 1.x · CLI v3) and Claude Code
 
-The contribution prose uses `{{HARNESS_DIR}}`, which the compose hook substitutes, so the
-converter path it prints is right on either harness. ⚠️ `ua-plugin` hardcodes `.kiro/` in the same
-sentence — that is a defect in that plugin, not a convention to copy.
+The contribution prose uses `{{HARNESS_DIR}}`, which the compose hook substitutes, so the converter
+path it prints is right on either harness.
 
 ## What it installs
 
@@ -46,19 +43,19 @@ contribution adds no `produces`/`consumes`.
 - **It does not restate the rules for using a map.** Those live in
   `aidlc/spaces/<space>/knowledge/aidlc-shared/external-code-map.md`.
 
-## 🔴 Measured schema notes — why the converter is not a copy of `ua-code-map.ts`
+## 🔴 Measured schema notes — what the converter is built on
 
 Measured from Graphify 0.9.54's own output on a 123-file Java+TypeScript corpus, not from its
 prose docs. Three differences change what the slices can say:
 
-| | Understand-Anything | Graphify |
-|---|---|---|
-| top-level shape | `{project, nodes, edges, layers, tour}` | NetworkX node-link: `{directed, multigraph, graph, nodes, links, hyperedges}` — the edge array is **`links`**, and the prose docs saying "edges" are wrong |
-| project metadata | `project{name, languages, frameworks, description, analyzedAt, gitCommitHash}` | **absent** (`graph: {}` when there is no git) — the converter synthesises provenance from the graph |
-| per-node summary | yes, LLM-written | **none** — the AST pass is deterministic and free |
-| grouping | `layers[]`, named and described | Leiden `community` integers, **unnamed** unless a separate LLM naming pass runs |
-| edge confidence | none | `confidence` ∈ `EXTRACTED` / `INFERRED` / `AMBIGUOUS` plus `confidence_score` |
-| granularity (same corpus) | 137 nodes / 290 edges / 15 layers | 746 nodes / 2167 links / 28 communities — symbol level, not file level |
+| what | measured |
+|---|---|
+| top-level shape | NetworkX node-link: `{directed, multigraph, graph, nodes, links, hyperedges}` — the edge array is **`links`**, and the prose docs saying "edges" are wrong |
+| project metadata | **absent** (`graph: {}` when there is no git) — the converter synthesises provenance from the graph |
+| per-node summary | **none** — the AST pass is a parse, not a reading |
+| grouping | Leiden `community` integers, **unnamed** unless a separate LLM naming pass runs |
+| edge confidence | `confidence` ∈ `EXTRACTED` / `INFERRED` / `AMBIGUOUS` plus `confidence_score` |
+| granularity | 746 nodes / 2167 links / 28 communities on the measured corpus — symbol level, not file level |
 
 So the slices are built from **structure** — degree, community, path, relation kind, confidence —
 rather than from sentences. The converter does not invent summaries or community names, and the
@@ -77,22 +74,20 @@ Valid `aidlc.contributes` keys are `stages · overlays · agents · scopes · se
 tools`, `memory` is refused by the validator, and the pinned compose actually installs only
 `stages`, `sensors` and `tools`. So one prerequisite is not carried here:
 
-- **`aidlc-shared/external-code-map.md`** — the rules file the contribution points at. It is owned
-  by `$ASSETS/custom-assets/knowledge/aidlc-shared/external-code-map.md` and landed by the
-  prerequisite installer that step 3b of the apply procedure runs, so on a tree that carried
-  `ua-plugin` first the file is already there.
-  ⚠️ **That file's example sentence names Understand-Anything and `<repo>/.ua/`.** The rules
-  themselves are tool-neutral — it is one example line — but on a Graphify tree that line points at
-  the wrong tool. Fixing it means editing the owner asset, and the installer's `--check` mode
-  compares that asset byte-for-byte against every tree already carrying it, so the edit has reach.
-  It is a decision, not a typo fix: recorded here and left undone.
+- **the rules file, the method document and the skill** — `aidlc-shared/external-code-map.md`,
+  `GRAPHIFY_GUIDE.md` at the tree root, and `<harness>/skills/aidlc-graphify-code-map/`. All three are
+  landed by the prerequisite installer (`$ASSETS/scripts/apply_external_code_map.py`), which reads this
+  plugin's sentinel out of the composed stage file and installs the Graphify asset set for it — so the tree's prose, its rules
+  and its skill all name the same tool. Assert with `--check`.
+  ⭐ That installer touches **no always-on instruction file**: `AGENTS.md` and `CLAUDE.md` stay
+  byte-identical to stock, because a pointer there is paid by every stage while the skill's own
+  `description` and `GRAPHIFY_GUIDE.md` cost nothing.
 
 ## Install
 
 Follow `README.md` — the pre-flight, compose, prerequisite and verdict steps are the same,
-with `graphify-plugin` in place of `ua-plugin`. The verdict table applies unchanged
-except for the `ua-plugin` row: expect `tools/graphify-map.ts` installed and `stage-graph.json`
-**unchanged**.
+naming `graphify-plugin`. The verdict table applies unchanged except for its code-map row:
+expect `tools/graphify-map.ts` installed and `stage-graph.json` **unchanged**.
 
 ## Using the converter
 
@@ -128,6 +123,6 @@ union merge driver — both git features, neither required to build or query a m
 
 ## Pinned compose hook
 
-`hooks/compose.ts` is the same pinned template `ua-plugin` carries, byte-identical
+`hooks/compose.ts` is the pinned template every plugin here carries, byte-identical across them
 (md5 `3dd2b7db0c44841efade53c4cbdefd8c`). Do not regenerate it from the current upstream template —
 `README.md` records why.

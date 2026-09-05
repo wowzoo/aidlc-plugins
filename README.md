@@ -93,7 +93,7 @@ done
 uv run python scripts/merge-mcp-registry-kiro.py   "$TARGET" --src "$ASSETS/custom-skills/mcp.json" --apply
 uv run python scripts/merge-mcp-registry-claude.py "$TARGET" --src "$ASSETS/custom-skills/mcp.json" --apply
 
-#    3b. ua-plugin: 1 skill + UNDERSTANDING_GUIDE.md + shared knowledge + two prose pointers.
+#    3b. the code-map plugin: 1 skill + a method document + shared knowledge + a project.md rule.
 #        🔴 None of these four has a channel in `contributes` (no `skills` key · `memory` is
 #        refused by the validator · a root file is not a content dir · `knowledge` is a valid
 #        key but the pinned compose installs only stages, sensors and tools).
@@ -113,15 +113,26 @@ done
 knowledge · tools`; `memory` is explicitly refused by the validator, and the
 compose hook pinned here installs only **`stages`, `sensors` and `tools`**. So the
 prerequisites — 4 skills and 2 MCP entries for `visual-mockups`, and the skill,
-guide, knowledge file and prose pointers for `ua-plugin` — are landed by whoever
-applies the plugin, as in step 3.
+method document, knowledge file and `project.md` rule for whichever code-map plugin
+you composed — are landed by whoever applies the plugin, as in step 3.
+
+⭐ **The code-map installer picks its asset set from the tree.** It reads the composed
+plugin's sentinel out of the stage file, so a `ua-plugin` tree gets the
+Understand-Anything set and a `graphify-plugin` tree gets the Graphify one — the
+prose, the rules and the skill always name the same tool. A tree carrying both is
+refused, because there is no single right answer for it.
+
+⭐ **It touches no always-on instruction file.** `AGENTS.md` and `CLAUDE.md` stay
+byte-identical to stock: a pointer there is read by every stage, while the skill's own
+`description` and the method document cost nothing. The trade-off is deliberate — a
+user who never mentions a code map is never told the wiring exists, the same way
+`visual-mockups` waits to be asked.
 
 Those prerequisite assets are **not part of this repository**: they are owned
 elsewhere and referenced above as `$ASSETS`. Point `$ASSETS` at your own tree
-containing `custom-skills/` (the four Figma-path skills, the
-`aidlc-external-code-map` skill, and `mcp.json`), `custom-assets/`
-(`UNDERSTANDING_GUIDE.md` and `knowledge/aidlc-shared/…`) and
-`scripts/apply_external_code_map.py`. Skip step 3a if you only want the HTML
+containing `custom-skills/` (the four Figma-path skills, one code-map skill per tool,
+and `mcp.json`), `custom-assets/` (a method document per tool and
+`knowledge/aidlc-shared/…`) and `scripts/apply_external_code_map.py`. Skip step 3a if you only want the HTML
 mockup path, which needs no MCP server — but it still needs the
 `frontend-design` skill.
 
