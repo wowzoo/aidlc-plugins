@@ -1,14 +1,20 @@
 # aidlc-plugins — authoring form and apply procedure
 
-The authoring form of three AI-DLC plugins, plus the drivers that put them on a
-tree or shell and judge the result.
+The authoring form of four AI-DLC plugins, plus the drivers that put the first
+three on a tree or shell and judge the result.
 
 ```
 visual-mockups/     gives the mockup stages a visual surface and carries the mockup into code
 ua-plugin/          lets reverse-engineering (2.1) use an external structural map as an index — Understand-Anything
 graphify-plugin/    the same seam for Graphify — an ALTERNATIVE to ua-plugin, not a layer on it
+project-overview/   a stage at the end of each phase that keeps one cumulative project overview per space
 scripts/            apply and judgement drivers
 ```
+
+⚠️ **`project-overview` is a different kind of plugin.** The other three are
+overlay-only and carry a pinned older `hooks/compose.ts`; the procedure below is
+theirs. `project-overview` **adds stages**, ships no compose hook, and is built
+and tested with the engine's current plugin tools — see `project-overview/README.md`.
 
 🔴🔴 **`ua-plugin` and `graphify-plugin` are alternatives.** They contribute the same anchor of the
 same stage for two different tools, so a tree carrying both hands the Developer two indexes with two

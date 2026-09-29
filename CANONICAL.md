@@ -11,6 +11,7 @@
 - `visual-mockups`
 - `ua-plugin`
 - `graphify-plugin`
+- `project-overview` (2026-09-30 추가 — stage 를 더하는 plugin 이라 엔진의 현재 plugin 도구로 build · test 한다)
 - plugin manifests, contributions, tools, compose hooks
 - anchor 검증과 MCP registry merge/policy scripts
 
