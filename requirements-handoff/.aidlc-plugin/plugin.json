@@ -1,0 +1,18 @@
+{
+  "name": "requirements-handoff",
+  "version": "0.2.2",
+  "description": "A no-code scope for a product owner: from one improvement request to the requirements and screen design a delivery team builds from — eight core ideation and inception stages, then a clickable wireframe prototype that checks the flow and lists the decisions the documents left open.",
+  "author": {
+    "name": "Keehyun Jang"
+  },
+  "dependencies": [
+    "core"
+  ],
+  "aidlc": {
+    "contributes": {
+      "stages": "stages/",
+      "overlays": "contributions/",
+      "scopes": "scopes/"
+    }
+  }
+}
