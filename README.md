@@ -1,32 +1,41 @@
 # aidlc-plugins — authoring form and apply procedure
 
-The authoring form of four AI-DLC plugins, plus the drivers that put the first
-three on a tree or shell and judge the result.
+The authoring form of six AI-DLC plugins, plus the drivers that judge the result
+of putting them on a tree or shell.
 
 ```
 visual-mockups/     gives the mockup stages a visual surface and carries the mockup into code
-ua-plugin/          lets reverse-engineering (2.1) use an external structural map as an index — Understand-Anything
+ua-plugin/          lets reverse-engineering use an external structural map as an index — Understand-Anything
 graphify-plugin/    the same seam for Graphify — an ALTERNATIVE to ua-plugin, not a layer on it
+codekb-mcp-plugin/  the CodeKB service (MCP `code-knowledge-base`) as an index at reverse-engineering and for impact at requirements-analysis and functional-design
 project-overview/   a stage at the end of each phase that keeps one cumulative project overview per space
-scripts/            apply and judgement drivers
+requirements-handoff/ a no-code scope for a product owner: requirements, screen design and a clickable wireframe for a delivery team
+install/            the INSTALL.md each packaged zip carries, one per tool (Claude Code, Codex, Kiro)
+scripts/            packaging, judgement and MCP registry drivers
 ```
 
-⚠️ **`project-overview` is a different kind of plugin.** The other three are
-overlay-only and carry a pinned older `hooks/compose.ts`; the procedure below is
-theirs. `project-overview` **adds stages**, ships no compose hook, and is built
-and tested with the engine's current plugin tools — see `project-overview/README.md`.
+All six ship **no compose hook** and are built and tested with the plugin tools of the release
+they target (see "Which tools"); the builder injects the bundled hook, so
+`aidlc engine plugin sync` installs them. `visual-mockups` 0.1.0 and
+`graphify-plugin` 0.1.0 carried a pinned older hook that sync refuses; their
+READMEs say how to upgrade a tree that has them.
 
 🔴🔴 **`ua-plugin` and `graphify-plugin` are alternatives.** They contribute the same anchor of the
 same stage for two different tools, so a tree carrying both hands the Developer two indexes with two
-provenance chains. **Compose exactly one of them into a tree.** Nothing enforces it — each owns its
-own sentinel, so compose will happily land both. Choosing is what the `for P in …` list below is for.
+provenance chains. **Compose exactly one of them into a tree.** Nothing in compose enforces it —
+each owns its own sentinel — but both `prerequisites/INSTALL.md` procedures stop on a tree that
+carries the other.
 
 | Driver | What it does |
 |---|---|
+| `scripts/package-plugin.py` | builds one zip per harness — projection, `prerequisites/` and the matching `install/` doc as `INSTALL.md` (see "Distribute") |
 | `scripts/check-plugin-anchors.py` | `--pre` every declared anchor resolves in the compose base · `--post` every fragment actually landed |
-| `scripts/merge-mcp-registry-kiro.py` | union-merges MCP entries into `.kiro/settings/mcp.json`, never overriding a stock key |
-| `scripts/merge-mcp-registry-claude.py` | the same for a claude tree's root `.mcp.json`, writing no `disabled` key |
+| `scripts/merge-mcp-registry-kiro.py` | union-merges MCP entries into `.kiro/settings/mcp.json`, never overriding a stock key; copies each source block verbatim, so its `"disabled": true` (both the stock and our source registry carry it) stays |
+| `scripts/merge-mcp-registry-claude.py` | the same for a claude tree's root `.mcp.json`, dropping the `disabled` key |
 | `scripts/apply-mcp-registry-policy.py` | narrows the merged registry to a chosen server set and adds the `context7` header |
+
+The MCP drivers serve the distribution build. A person installing `visual-mockups` gets the `figma`
+entry from its `INSTALL.md` instead.
 
 A plugin here is **not** a layer of the distributed tree — it is applied on
 demand, so a committed tree does not carry one. The tradeoff is explicit: when a
@@ -37,164 +46,158 @@ the plugin is a choice rather than a property of the tree.
 
 ---
 
-## Apply — once per plugin
+## Which tools — `<tools-dir>`
 
-Run `compose` once per plugin. Order does not matter: compose keys drops
-**per plugin** (`plugin-compose-<PLUGIN_KEY>.drops`) and each run touches only its
-own sentinels, so two plugins on the same tree leave each other's sentinels
-intact.
+Every command below that runs `bun <tools-dir>/aidlc-plugin-*.ts` needs the plugin tools **of the
+release you target**: a tree of that release (`<project>/<harness>/tools`, e.g. one made with
+`aidlc config` by that `aidlc` binary), or a checkout of that release's tag with its generated data
+(`plugin-targets.json`, `data/plugin-hooks-template/`). The builder copies the compose hook and the
+Kiro IDE hook registration from wherever it runs, so older tools build an older hook (before 2.11.3,
+no `"timeout"`). **Do not assume a local engine checkout matches the installed `aidlc`**: check
+`aidlc --version` against the tools' release.
 
-> 🔴 That per-plugin guarantee depends on `PLUGIN_KEY` resolving from the
-> manifest. `PLUGIN_KEY` derivation looks for the manifest under
-> `.aidlc-plugin` · `.claude-plugin` · `.codex-plugin` · `.kiro-plugin`; **ours is
-> `.aidlc-plugin/plugin.json`**. If that name is missing from the list, derivation
-> falls back to the parent directory segment — which, for the `/tmp` copies used in
-> step 2, is `tmp` for *every* plugin. Both plugins would then share
-> `plugin-compose-tmp.drops`, and a later clean compose would delete the earlier
-> plugin's live degraded drop (drop files are removed on a no-drop run). Keep
-> `.aidlc-plugin` first in that list.
+---
 
-> 🔴 **After editing the authoring form, delete the installed copy before
-> composing.** `copyTreeNoClobber` does **not** overwrite — a dest whose content
-> differs is recorded as a `[degraded]` drop and skipped (identical content is
-> unrecorded and the re-run is harmlessly idempotent), and the installed copy stays
-> stale. Editing a tool and re-running compose alone updates the driver-owned side
-> while leaving the tool at its old sha.
-> ```bash
-> rm -f "$TARGET/$HD/tools/ua-code-map.ts"      # drop the installed copy of what you changed
-> find "$TARGET" -name '*.drops' -delete         # and the previous run's drop records
-> # then re-run step 2
-> ```
-> ⭐ The `drops 0` row of the judgement table catches this mistake.
+## Distribute — a zip per tool, one prompt to install
+
+AI-DLC has no command a person types to install a plugin. Package each plugin as one zip per tool;
+the person unzips it at the project root and gives the AI one line.
 
 ```bash
-TARGET=<root of the tree or shell>
-HD=.kiro            # .claude for a claude tree/shell
-ASSETS=<your asset tree>   # see "Prerequisites are supplied by the installer" below
+uv run python scripts/package-plugin.py --tools <tools-dir> \
+  --out <dir outside this repo> visual-mockups ua-plugin graphify-plugin codekb-mcp-plugin project-overview requirements-handoff
+```
+
+| Zip | Lands at | The person tells the AI |
+|---|---|---|
+| `aidlc-<p>-<v>-claude.zip` | `.claude/aidlc-plugins/<p>/` | `Read .claude/aidlc-plugins/<p>/INSTALL.md to the end and follow it.` |
+| `aidlc-<p>-<v>-codex.zip` | `.codex/aidlc-plugins/<p>/` | `Read .codex/aidlc-plugins/<p>/INSTALL.md to the end and follow it.` |
+| `aidlc-<p>-<v>-kiro-ide.zip` — Kiro IDE, and Kiro CLI on its v3 engine | `.kiro/aidlc-plugins/<p>/` + `.kiro/hooks/aidlc-<p>-compose.json` | `Read .kiro/aidlc-plugins/<p>/INSTALL.md to the end and follow it.` |
+| `aidlc-<p>-<v>-kiro.zip` — Kiro CLI on its V2 engine | `.kiro/aidlc-plugins/<p>/` | same |
+
+The suffix is the AI-DLC harness, not the tool: `kiro-ide` serves Kiro IDE and Kiro CLI v3. For a
+distribution that ships one harness only, `--harness <h> --plain-name` names the zip
+`aidlc-<p>-<v>.zip`; its INSTALL.md names that file.
+
+The three tools install differently, and `install/` holds one procedure for each:
+
+| | Claude Code (`install/claude-code.md`) | Codex (`install/codex.md`) | Kiro: `kiro-ide` and `kiro` harnesses (`install/kiro.md`) |
+|---|---|---|---|
+| install | copy to `<config>/aidlc-plugins/<p>/`, local marketplace, `claude plugin install --scope local` | copy to `$CODEX_HOME/aidlc-plugins/<p>/`, `codex plugin add` — **for the user, every project** | none — the plugin stays in `.kiro/aidlc-plugins/<p>/` |
+| compose | the AI runs `aidlc engine plugin sync`; the plugin's SessionStart hook after that | same; plugin hooks run in interactive `codex`, not in `codex exec` | the AI runs sync with `AIDLC_PLUGIN_ROOT`; Kiro IDE's compose hook after that, Kiro CLI has none |
+| skills / MCP | `.claude/skills/` · `claude mcp add --scope local` | `$CODEX_HOME/skills/` · `.codex/config.toml` | `.kiro/skills/` · `.kiro/settings/mcp.json` |
+| unzipped folder afterwards | deletable | deletable | **keep** |
+
+🔴 **Nothing may land outside the harness directory or the user's tool config.** Measured on 2.11.2:
+a folder at the project root with a `tests/` directory or a `.ts` file turns a new project
+brownfield; a server in the project's `.mcp.json` and a skill in `.agents/skills/` enter the source
+boundary. With the placements above, project type, the CodeKB source snapshot and the source
+boundary stay unchanged on all four harnesses, and an AI following only `INSTALL.md` installed
+`visual-mockups` + `ua-plugin` end to end on Claude Code, Codex and Kiro CLI. The one exception is
+engine behaviour: on Codex, a plugin that adds stages puts its runners in `.agents/skills/`, which
+enter the source boundary exactly as AI-DLC's own runners do.
+
+---
+
+## Apply — once per plugin (development)
+
+```bash
+TOOLS=<tools-dir>      # see "Which tools"
+TARGET=<project root>
+HD=.kiro            # .claude for a claude tree
 
 # 1. 🔴 PRE-FLIGHT — measure that anchors resolve AND bind to the intended step
-for P in visual-mockups ua-plugin; do
-  uv run python scripts/check-plugin-anchors.py --pre "$TARGET" --plugin-root "$P"
-done
+uv run python scripts/check-plugin-anchors.py --pre "$TARGET" --plugin-root <plugin>
 #    🔴🔴 "resolved" is not "bound correctly" — **read the titles.** A stage that drops
 #    a step renumbers everything after it: one anchor then vanishes (and would be
 #    dropped) while another survives and binds to the wrong step. The silent one is
-#    worse. ⇒ **an anchor means a title, not a number.**
+#    worse. ⇒ **an anchor means a title, not a number.** (A vanished anchor is a
+#    `[degraded]` drop: direct compose still exits 0, sync rejects the result.)
 #    On exit 1 the fix belongs in the authoring form (`<plugin>/contributions/`),
 #    not in the tree.
 
-# 2. PLUGIN_ROOT is a /tmp copy (never hand the authoring form to compose directly)
-for P in visual-mockups ua-plugin; do
-  R=/tmp/pr-$P; rm -rf $R; cp -R $P $R
-  AIDLC_PLUGIN_ROOT=$R AIDLC_PROJECT_DIR="$TARGET" AIDLC_HARNESS_DIR=$HD bun $R/hooks/compose.ts
-done
-#    ⚠️ compose prints 0 lines even on success. Quiet is normal and is
-#       indistinguishable from a quiet failure, so judge only by the table below.
+# 2. Validate and build the projection for the harness
+bun $TOOLS/aidlc-plugin-validate.ts <plugin>          # VALID, one compose-hook-absent warning
+bun $TOOLS/aidlc-plugin-build.ts    <plugin> <harness> <out>   # claude, kiro-ide, kiro, codex, …
 
-# 3. 🔴 Install the prerequisites the seam cannot carry — **both plugins have them**
-#    3a. visual-mockups: 4 skills + 2 MCP entries
-for s in frontend-design figma-use figma-generate-design figma-create-new-file; do
-  rm -rf "$TARGET/$HD/skills/$s"; cp -R "$ASSETS/custom-skills/$s" "$TARGET/$HD/skills/$s"
-done
-uv run python scripts/merge-mcp-registry-kiro.py   "$TARGET" --src "$ASSETS/custom-skills/mcp.json" --apply
-uv run python scripts/merge-mcp-registry-claude.py "$TARGET" --src "$ASSETS/custom-skills/mcp.json" --apply
+# 3. Install the projection the host's way and sync — the steps in install/<tool>.md
+#    (Claude Code / Codex: local marketplace + install, then sync; Kiro: drop the
+#    projection's .kiro folder into the project, then)
+aidlc engine plugin sync --harness-dir .kiro --plugin-root ./.kiro/aidlc-plugins/<plugin>
+#    🔴 `aidlc engine plugin sync --help` prints no help: it RUNS a sync in the current
+#    folder (2.11.3 reads no help flag). Run sync only inside the scratch tree.
 
-#    3b. the code-map plugin: 1 skill + a method document + shared knowledge + a project.md rule.
-#        🔴 None of these four has a channel in `contributes` (no `skills` key · `memory` is
-#        refused by the validator · a root file is not a content dir · `knowledge` is a valid
-#        key but the pinned compose installs only stages, sensors and tools).
-#        ⇒ the installer lands them from the owner originals. Assert with `--check`.
-uv run python "$ASSETS/scripts/apply_external_code_map.py" "$TARGET"
+# 4. Prerequisites the seam cannot carry — tell the AI:
+#    "Read <plugin>/prerequisites/INSTALL.md to the end and follow it."
+#    (visual-mockups, ua-plugin, graphify-plugin, codekb-mcp-plugin; project-overview and requirements-handoff have none)
 
-# 4. 🔴 Judge by the artifact — exit code is not a judgement
-for P in visual-mockups ua-plugin; do
-  uv run python scripts/check-plugin-anchors.py --post "$TARGET" --plugin-root "$P"
-done
+# 5. 🔴 Judge by the artifact — exit code is not a judgement
+uv run python scripts/check-plugin-anchors.py --post "$TARGET" --plugin-root <plugin>
 ```
 
-### Prerequisites are supplied by the installer
+- **Sync is a transaction.** Every selected plugin composes in a staging copy first; one
+  `[degraded]` drop rejects the staged result before anything is committed, and the drops file is
+  thrown away with the staging copy — read the sync's own error line.
+- **A file sync has no record of installing is never overwritten.** That is how an older plugin
+  version's tool, composed by the pinned hook, blocks the first sync of the new one; the plugin's
+  README names the file to delete.
+- `bun $TOOLS/aidlc-plugin-test.ts <plugin> --install <project-root> --harness <harness>` runs the
+  same build and compose in a staging copy (drops, graph compile, idempotent second compose) and
+  leaves the install untouched.
+
+### Prerequisites ship in `prerequisites/`
 
 🔴 **The seam can ship neither skills nor MCP servers.** The valid
 `aidlc.contributes` keys are `stages · overlays · agents · scopes · sensors ·
-knowledge · tools`; `memory` is explicitly refused by the validator, and the
-compose hook pinned here installs only **`stages`, `sensors` and `tools`**. So the
-prerequisites — 4 skills and 2 MCP entries for `visual-mockups`, and the skill,
-method document, knowledge file and `project.md` rule for whichever code-map plugin
-you composed — are landed by whoever applies the plugin, as in step 3.
+knowledge · tools`, and `memory` is refused by the validator. Rules files go through
+`knowledge`. What is left — skills, and for `visual-mockups` the `figma` MCP entry —
+sits in each plugin's `prerequisites/` with an `INSTALL.md` the AI follows **after**
+the plugin is composed. Neither the builder nor compose reads `prerequisites/`.
 
-⭐ **The code-map installer picks its asset set from the tree.** It reads the composed
-plugin's sentinel out of the stage file, so a `ua-plugin` tree gets the
-Understand-Anything set and a `graphify-plugin` tree gets the Graphify one — the
-prose, the rules and the skill always name the same tool. A tree carrying both is
-refused, because there is no single right answer for it.
+| Plugin | `prerequisites/` holds | Fetched instead of shipped |
+|---|---|---|
+| `visual-mockups` | `frontend-design` (Apache-2.0, `LICENSE.txt`) | Figma's three skills, from `figma/mcp-server-guide` (no licence file) |
+| `ua-plugin` | `aidlc-external-code-map` (optional) | — |
+| `graphify-plugin` | `aidlc-graphify-code-map` (optional) | — |
 
-⭐ **It touches no always-on instruction file.** `AGENTS.md` and `CLAUDE.md` stay
-byte-identical to stock: a pointer there is read by every stage, while the skill's own
-`description` and the method document cost nothing. The trade-off is deliberate — a
-user who never mentions a code map is never told the wiring exists, the same way
+⭐ **No procedure touches an always-on instruction file.** `AGENTS.md` and `CLAUDE.md`
+stay byte-identical to stock: a pointer there is read by every stage, while a
+skill's own `description` costs nothing. The trade-off is deliberate — a user who
+never mentions a code map is never told the wiring exists, the same way
 `visual-mockups` waits to be asked.
-
-Those prerequisite assets are **not part of this repository**: they are owned
-elsewhere and referenced above as `$ASSETS`. Point `$ASSETS` at your own tree
-containing `custom-skills/` (the four Figma-path skills, one code-map skill per tool,
-and `mcp.json`), `custom-assets/` (a method document per tool and
-`knowledge/aidlc-shared/…`) and `scripts/apply_external_code_map.py`. Skip step 3a if you only want the HTML
-mockup path, which needs no MCP server — but it still needs the
-`frontend-design` skill.
 
 ## 🔴 Judgement table — do not trust exit 0
 
 | Item | How to measure | Expected |
 |---|---|---|
-| stage count unchanged | `stage-graph.json` array length · slug set | both unchanged (both plugins are overlay-only) |
+| stage count unchanged | `stage-graph.json` array length · slug set | both unchanged for the three overlay-only plugins |
 | prose splice landed | `check-plugin-anchors.py --post` | per file, **sentinels = fragments×2** (open+close) · **`### Step Nb` headings owned by the plugin = fragment count**. 🔴**Never gate on the total heading count** — that is the host stage's own numbering and upstream moves it (a hardcoded value produces false FAILs) |
-| drops | `find "$TARGET" -name '*.drops'` | **0**. Any file is a silent degrade |
-| visual-mockups seam | `produces`/`consumes` delta | `rough` produces += `mockup-visual-ref` · `refined` produces += `mockup-visual-ref-refined`, consumes += `mockup-visual-ref` · `code-generation` consumes += all 4, optional. Exact-match counts: `mockup-visual-ref` **3** / `-refined` **2** |
-| ua-plugin | `tools/ua-code-map.ts` installed · `stage-graph.json` **unchanged** | no `adds`, so the graph does not move |
-| graphify-plugin | `tools/graphify-map.ts` installed · `stage-graph.json` **unchanged** | same shape as the row above — read it instead of this one if you composed `ua-plugin` |
-| prerequisite skills | `diff -rq` the 4 against their owner originals | **4/4 identical** (26 files) |
-| MCP merge | server count · no stock key lost | **5 → 7** · keys overwritten **0** · 🔴**kiro marks every entry `disabled`; claude uses no `disabled` key at all** (the stock file has no such vocabulary) — the convention splits by harness, so the drivers are split |
-| 0 regressions | `doctor` · `graph compile --check` · `loadAgents` | **same doctor count as before apply · 0 failed** · exit 0. 🔴Do not record absolute doctor numbers here |
-| idempotent | stage files + graph sha after a 2nd compose | unchanged · a 2nd MCP run skips every key |
-| byproducts | `scope-grid.json` · drop folders | no diff · drop folders in the tree: **0** |
+| drops | sync's exit and error line · `find "$TARGET" -name '*.drops'` | sync `complete`, **0** drops files |
+| visual-mockups seam | `produces`/`consumes` delta | `rough` produces += `visual-mockups-ref` · `refined` produces += `visual-mockups-ref-refined`, consumes += `visual-mockups-ref` · `code-generation` consumes += both plus `mockups`, `wireframes`, all optional. No `mockup-visual-ref` left anywhere (0.1.0's name) |
+| ua-plugin | `tools/ua-code-map.ts` + `knowledge/aidlc-shared/external-code-map.md` installed · `stage-graph.json` **unchanged** | no `adds`, so the graph does not move |
+| graphify-plugin | `tools/graphify-map.ts` + `knowledge/aidlc-shared/external-code-map.md` installed · `stage-graph.json` **unchanged** | same shape as the row above |
+| prerequisites | the `INSTALL.md` report | every line accounted for; MCP file parses, no other key changed. The added `figma` entry has no `disabled` key; the stock Kiro CLI entries keep their `"disabled": true` |
+| 0 regressions | `doctor` · `graph compile --check` | **same doctor count as before apply** · exit 0. 🔴Do not record absolute doctor numbers here |
+| idempotent | `aidlc-plugin-test.ts` | `Idempotent second compose: true` |
 
-## 🔴🔴 Do not regenerate compose.ts from the current upstream template
-
-Both plugins' `hooks/compose.ts` is a **pinned older generation** of the template
-plus the local `PLUGIN_KEY` delta noted above. The two copies are byte-identical
-to each other — 673 lines, md5 `3dd2b7db0c44841efade53c4cbdefd8c` — and that is
-the invariant to check after touching either one. Two reasons not to regenerate:
-
-1. **The gap is large and widening** — the upstream template is ~1,866 lines
-   against our 673.
-2. **The current template has a stage-rejection path**
-   (`rejectedStageFiles` / `recordDroppedStage`): if a plugin **adds** a stage and
-   that stage references an agent that cannot be composed, the file is dropped.
-   ⭐ Both plugins here are outside that path (neither adds a stage) — the risk
-   appears **on replacement**.
-
-⇒ `aidlc-plugin-validate.ts` reports exactly **one** error, `compose-hook-stale`,
-for each plugin. It is expected. ⚠️ Contribution frontmatter carries **both**
-`bundle:` and `plugin:` — the pinned compose reads `bundle:` while the current
-validator's `stage-owner` rule requires `plugin:`. (`visual-mockups` still carries
-only `bundle:` and so trips that rule; its content hash is tied into the
-sentinels, so fixing it makes a re-compose rewrite the fragments. Tracked
-separately.)
+Measured 2026-10-26 on AI-DLC v2.11.1 (claude and kiro-ide trees packaged from the tag):
+`visual-mockups` 0.2.0 and `graphify-plugin` 0.2.0 validate `VALID` and test `CLEAN`, sync with the
+`aidlc` 2.11.1 binary into the same tree side by side, and both `INSTALL.md` procedures run through.
 
 ## Known · deliberately untouched
 
-- **Neither plugin appears in the `select-plugins` list.** Registration reads only
-  a stage's `plugin:` field and a scope's `meta.plugin`, and an overlay is neither.
-  **By design, not a defect**, and orthogonal to selection.
-- **Drop folders such as `.visual-mockups-plugin/` are not committed to a tree.**
-  The compose result already lives in the stage sources and the graph; that folder
-  is an input only for running compose *again*.
+- **Overlay-only plugins are selectable once composed.** Since `v2.10.1-preview.20261004.1`
+  (upstream #1675, so every 2.11 release) the known-plugin list also reads compose's records under `tools/data/` (`plugin-contrib-`, `plugin-owned-`,
+  `plugin-compose-<p>.json`), not only stage and scope owners. Measured 2026-11-06 on a
+  kiro-ide 2.11.3 project with visual-mockups composed: `aidlc engine plugin select`
+  prints `Known plugins: aidlc, visual-mockups`. Earlier engines listed only stage and scope
+  owners, so an overlay-only plugin did not appear there.
 - **`visual-mockups` deliberately reverses two earlier positions** — it puts the
-  plugin back in, and it does touch `.mcp.json`. Note the patch layer itself still
-  does not touch `.mcp.json`: the union merge happens only at apply time.
-- **`ua-plugin` does not restate the rules.** How to treat a map belongs to
-  `aidlc/spaces/<space>/knowledge/aidlc-shared/external-code-map.md`, and the
-  delegated personas' **MANDATORY** "Delegated knowledge preflight" reads that
-  directory, so the rules already reach 2.1. The plugin ships only WHERE/WHEN (the
-  conductor procedure). ⚠️ Landing that knowledge file in the shell is step 3b
-  above.
+  plugin back in, and it does touch the MCP file. The patch layer itself still
+  does not: the `figma` key is added only when a person asks for the Figma path.
+- **The code-map plugins do not restate the rules in the stage.** How to treat a map
+  belongs to `knowledge/aidlc-shared/external-code-map.md`, which each ships and
+  compose installs into `<harness>/knowledge/aidlc-shared/`; the delegated
+  personas' **MANDATORY** "Delegated knowledge preflight" reads that directory, so
+  the rules reach reverse-engineering. The fragments carry only WHERE/WHEN (the
+  conductor procedure).

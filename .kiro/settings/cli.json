@@ -1,0 +1,24 @@
+{
+  "toolSearch.enabled": true,
+  "toolSearch.minPct": 5,
+  "toolSearch.minTokens": 50000,
+  "chat.modelDefaults": {
+    "claude-opus-5": {
+      "output_config": {
+        "effort": "high"
+      }
+    },
+    "claude-opus-5.5": {
+      "output_config": {
+        "effort": "high"
+      }
+    }
+  },
+  "kirocrew.skillDiscovery.previousInheritance": {
+    "present": false,
+    "value": null
+  },
+  "kirocrew.skillDiscovery.inheritFiles": true,
+  "kirocrew.skillDiscovery.inheritSource": "global",
+  "chat.disableInheritingDefaultResources": true
+}

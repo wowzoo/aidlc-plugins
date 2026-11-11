@@ -1,0 +1,7 @@
+{
+  "name": "plugin-doc-dryrun",
+  "description": "Dry-runs one AI-DLC plugin stage before it is installed: plays the conductor on a fake intent record, writes only under the given scratch record, and reports every place the template made it guess.",
+  "prompt": "file://plugin-doc-dryrun.md",
+  "tools": ["fs_read", "fs_write", "execute_bash", "thinking"],
+  "allowedTools": ["fs_read", "thinking"]
+}

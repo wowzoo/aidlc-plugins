@@ -1,0 +1,8 @@
+{
+  "name": "plugin-doc-reviewer",
+  "description": "Read-only second reviewer for AI-DLC plugin work. Checks every claim against the installed AI-DLC tree with file:line evidence and grades A/B/C on request. Never edits files.",
+  "prompt": "file://plugin-doc-reviewer.md",
+  "model": "gpt-5.6-sol",
+  "tools": ["fs_read", "thinking"],
+  "allowedTools": ["fs_read", "thinking"]
+}
