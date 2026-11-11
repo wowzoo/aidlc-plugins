@@ -8,22 +8,34 @@ with two provenance chains at the same anchor. Nothing in compose enforces it �
 own sentinel — so it is a decision, and it belongs to whoever applies the tree. `README.md`
 lists what is available and the prerequisite installer refuses a tree that carries two.
 
-## Scope: Kiro unified agent harness (IDE 1.x · CLI v3) and Claude Code
+## Scope: Kiro (IDE and CLI) and Claude Code
 
-The contribution prose uses `{{HARNESS_DIR}}`, which the compose hook substitutes, so the converter
-path it prints is right on either harness.
+The contribution prose uses `{{HARNESS_DIR}}`, which compose substitutes, so the converter and
+rules-file paths it prints are right on either harness.
 
 ## What it installs
 
-Two things, both additive:
+Three things, all additive:
 
 | what | where it lands |
 |---|---|
-| one contribution to `reverse-engineering` (Inception), anchor `before-step:2` | `<harness>/aidlc-common/stages/inception/reverse-engineering.md` |
+| two fragments in `reverse-engineering` (Inception): `Step 1b` before the Developer Code Scan, `Step 2b` before the Architect Synthesis | `<harness>/aidlc-common/stages/inception/reverse-engineering.md` |
 | the converter `graphify-map.ts` | `<harness>/tools/graphify-map.ts` |
+| the rules for treating a map, loaded by every inline and delegated agent | `<harness>/knowledge/aidlc-shared/external-code-map.md` |
 
 No new stages, no new agents, no new scopes, no sensors. `stage-graph.json` does not move: the
 contribution adds no `produces`/`consumes`.
+
+Works for a single repo (or the workspace root) and for **multi-repo workspaces**: each repo has its
+own map, its own converted files, and its own brief.
+
+**Step 1b (before Developer Code Scan):** for each repo Step 1 selected for a scan, look for a
+finished map, convert it, read its freshness row, and brief that repo's developer — the map as an
+index, `graphify-out/` is not source, and which `graphify-*` files describe this repo. A repo
+without a map gets a brief to ignore any `graphify-*` files left in the space knowledge.
+
+**Step 2b (before Architect Synthesis):** name the same files and freshness row in the brief of the
+link that writes that repo's artifacts.
 
 ## What it deliberately does NOT do
 
@@ -40,8 +52,11 @@ contribution adds no `produces`/`consumes`.
   there is nothing competing with the stage protocol's own first-tool-call discipline.
 - **It does not replace `reverse-engineering`.** That stage owns the CodeKB store and the store is
   the only structural surface later stages consume.
-- **It does not restate the rules for using a map.** Those live in
-  `aidlc/spaces/<space>/knowledge/aidlc-shared/external-code-map.md`.
+- **It does not restate the rules for using a map in the stage.** The fragment says WHERE and WHEN;
+  `external-code-map.md` says HOW.
+- **It does not edit an analysed repo's `.gitignore`.** `graphify-out/` belongs there before the
+  workflow starts; changing it during the stage changes the source fingerprint, and under a strict
+  policy CodeKB publishing then fails with `CODEKB_SOURCE_CHANGED`.
 
 ## 🔴 Measured schema notes — what the converter is built on
 
@@ -68,42 +83,71 @@ spent where it is needed: an `EXTRACTED` edge already *is* a source citation, wh
 `AMBIGUOUS` are the tool's own deduction. The developer slice lists the latter two, highest score
 first, with `source_file:source_location`.
 
-## 🔴 What the plugin seam cannot carry
+## Build, test, install
 
-Valid `aidlc.contributes` keys are `stages · overlays · agents · scopes · sensors · knowledge ·
-tools`, `memory` is refused by the validator, and the pinned compose actually installs only
-`stages`, `sensors` and `tools`. So one prerequisite is not carried here:
+Built with the engine's current plugin tools (`<tools-dir>` = the engine's `core/tools`). No compose
+hook is vendored; the builder injects the bundled one.
 
-- **the rules file, the method document and the skill** — `aidlc-shared/external-code-map.md`,
-  `GRAPHIFY_GUIDE.md` at the tree root, and `<harness>/skills/aidlc-graphify-code-map/`. All three are
-  landed by the prerequisite installer (`$ASSETS/scripts/apply_external_code_map.py`), which reads this
-  plugin's sentinel out of the composed stage file and installs the Graphify asset set for it — so the tree's prose, its rules
-  and its skill all name the same tool. Assert with `--check`.
-  ⭐ That installer touches **no always-on instruction file**: `AGENTS.md` and `CLAUDE.md` stay
-  byte-identical to stock, because a pointer there is paid by every stage while the skill's own
-  `description` and `GRAPHIFY_GUIDE.md` cost nothing.
+```bash
+bun test tests/                                                          # the converter, on synthetic repos
+bun <tools-dir>/aidlc-plugin-validate.ts graphify-plugin                 # VALID, one compose-hook-absent warning
+bun <tools-dir>/aidlc-plugin-build.ts   graphify-plugin <harness> <out>  # claude, kiro-ide, kiro, codex, …
+bun <tools-dir>/aidlc-plugin-test.ts    graphify-plugin --install <project-root> --harness <harness>
+```
 
-## Install
+Install the projection the host's way (`10-authoring-a-plugin.md` §5). On Kiro, drop the
+projection's `.kiro` folder into the project and run
+`aidlc engine plugin sync --harness-dir .kiro --plugin-root ./.kiro/aidlc-plugins/graphify-plugin`.
 
-Follow `README.md` — the pre-flight, compose, prerequisite and verdict steps are the same,
-naming `graphify-plugin`. The verdict table applies unchanged except for its code-map row:
-expect `tools/graphify-map.ts` installed and `stage-graph.json` **unchanged**.
+`ua-plugin` is an alternative: compose one of the two into a tree.
+
+## Prerequisites (optional) — `prerequisites/`
+
+A plugin cannot carry skills. `prerequisites/` holds the `aidlc-graphify-code-map` skill (how to run
+Graphify on each repo and convert the results) and `INSTALL.md`, a procedure for the AI to follow
+**after** the plugin is composed: detect the harness, find the plugin's marker in the stage file,
+ask, copy the skill without overwriting, report leftovers of the older install and each repo's
+`.gitignore` state. Neither the builder nor compose reads `prerequisites/` or `tests/`.
+
+## Upgrading from 0.1.0
+
+- 0.1.0 carried the pinned compose hook and `bundle:`, and could only be composed by running that
+  hook directly. 0.2.0 uses `plugin:` only and no vendored hook, so `aidlc engine plugin sync`
+  installs it.
+- 0.1.0 needed an external installer for the rules file, a `GRAPHIFY_GUIDE.md` at the tree root and
+  a `## External Code Map` section in `project.md`. 0.2.0 ships the rules file itself, and the skill
+  is the whole procedure. `INSTALL.md` Step 4 lists what the old installer left; delete it once the
+  plugin is composed.
+- The skill no longer carries its own `scripts/graphify-map.ts`; it runs the plugin's converter.
+- Converter output moved to per-repo names, and the stage gained `Step 2b`. Re-run the converter for
+  each repo, then delete the old fixed-name files it lists.
+- 🔴 **Delete `<harness>/tools/graphify-map.ts` before the first sync.** 0.1.0's compose left no
+  ownership record, so sync treats that copy as someone else's file, refuses to overwrite it, and
+  rolls the whole sync back (`collides with an existing file this plugin has no record of
+  installing`, exit 1). With it deleted, sync installs 0.2.0 and replaces 0.1.0's fragment in place
+  (measured on 2.11.1: one fragment, drops 0).
 
 ## Using the converter
 
 ```bash
-bun <harness>/tools/graphify-map.ts <analyzed-repo> --workspace . [--space default] [--dry-run]
+bun <harness>/tools/graphify-map.ts <repo-dir> [<repo-dir> ...] --workspace . --space <active-space> [--dry-run]
 ```
 
 Idempotent — run it again after every re-analysis; it prints each file with its byte size and
-whether it changed. It writes:
+whether it changed. It writes one set of files per repo, and the repo name is in every file name and
+every first heading:
 
 | file | read by |
 |---|---|
-| `aidlc-shared/graphify-code-map.md` | every agent — provenance, stack, areas, pointers |
-| `<architect>/graphify-architecture.md` | the architect — community structure, cross-community seams |
-| `<developer>/graphify-structure.md` | the developer — hub nodes, relations, hot files, edges to confirm |
-| `<product>/graphify-documents.md` | the product agent — **only when the map has non-code nodes** |
+| `aidlc-shared/graphify-code-map.<repo>.md` | every agent — provenance, **freshness** (map commit vs the repo's HEAD at conversion), stack, areas, pointers |
+| `<architect>/graphify-architecture.<repo>.md` | the architect — community structure, cross-community seams |
+| `<developer>/graphify-structure.<repo>.md` | the developer — hub nodes, relations, hot files, edges to confirm |
+| `<product>/graphify-documents.<repo>.md` | the product agent — **only when the map has non-code nodes** |
+
+- **Converting one repo never touches another repo's files**, and two trees with the same directory
+  name are refused rather than overwritten.
+- **Files from 0.1.0** (`graphify-code-map.md` etc., no repo in the name) are named in the output,
+  not deleted. Delete them once the per-repo files exist.
 
 The last one is conditional on evidence, not configuration: Graphify's AST pass emits
 `file_type: code` only, and document, paper, image and concept nodes appear once its semantic pass
@@ -120,9 +164,3 @@ contents**. So a non-git source tree is a supported setup here, not a degraded o
 converter's provenance row says which of the two situations produced a missing commit. What a
 non-git tree loses is only the opt-in `graphify hook install` auto-rebuild and the `graph.json`
 union merge driver — both git features, neither required to build or query a map.
-
-## Pinned compose hook
-
-`hooks/compose.ts` is the pinned template every plugin here carries, byte-identical across them
-(md5 `3dd2b7db0c44841efade53c4cbdefd8c`). Do not regenerate it from the current upstream template —
-`README.md` records why.
