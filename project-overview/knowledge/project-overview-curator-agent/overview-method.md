@@ -10,17 +10,26 @@ restating it, so the four cannot drift apart.
 | Copy | Path | Role |
 |---|---|---|
 | **Snapshot** | `project-overview-<phase>-snapshot.md` in the stage's engine-resolved record dir | What this phase of this intent approved. Part of the intent's record. |
-| **Published** | `aidlc/spaces/<active-space>/knowledge/documents/project-overview/project-overview.md` | The one current overview for the space. Indexed in DocumentKB so later intents' agents can cite it. |
+| **Published** | `aidlc/spaces/<active-space>/knowledge/documents/project-overview/project-overview.md` | The one current overview for the space. Indexed in DocumentKB, where a person or an agent looking it up finds it. |
+| **Digest** | `aidlc/spaces/<active-space>/knowledge/aidlc-shared/project-overview.md` | What later intents' agents see without asking: the summary and the path to the published overview. |
+
+**Why the digest exists.** Agents receive space knowledge only from
+`aidlc/spaces/<active-space>/knowledge/aidlc-shared/` and their own agent
+directory: every inline stage's `inline_context_paths` lists those files, and
+every delegated agent's knowledge preflight loads them. Nothing delivers
+`knowledge/documents/` or DocumentKB to them. So the digest is the part that
+reaches every later stage, and it stays small because every stage reads it.
 
 Resolve `<active-space>` from `aidlc/active-space` (`default` when the file is
 absent).
 
-**Ownership.** `knowledge/documents/` belongs to the team. This plugin owns
-exactly one file there — the published overview above — and writes it only
-inside a stage that ends at a human approval gate. Never create, edit, move or
-delete any other file under `knowledge/documents/`. Never write under
+**Ownership.** `knowledge/documents/` and `knowledge/aidlc-shared/` belong to
+the team. This plugin owns exactly one file in each — the published overview
+and the digest above — and writes them only inside a stage that ends at a human
+approval gate. Never create, edit, move or delete any other file under
+`knowledge/documents/` or `knowledge/aidlc-shared/`. Never write under
 `knowledge/documentkb/`: the catalog changes only through
-`{{INVOKE}} engine knowledge <verb>`.
+`aidlc engine knowledge <verb>`.
 
 ## Template
 
@@ -129,19 +138,40 @@ After the snapshot is written:
 1. Re-check rule 6, then write the snapshot's content to the published path
    (create the `project-overview/` folder on first publish).
 2. Index it:
-   `{{INVOKE}} engine knowledge onboard aidlc/spaces/<active-space>/knowledge/documents/project-overview/project-overview.md`
+   `aidlc engine knowledge onboard aidlc/spaces/<active-space>/knowledge/documents/project-overview/project-overview.md`
    — expect `fresh` on first publish and `edited` afterwards. `already` means
    nothing changed; say so.
-3. Find the document's id and current source revision with
-   `{{INVOKE}} engine knowledge list --json`.
+3. Take the document's `id` and `sha256` from that `onboard` output (its
+   `indexed` entry for this path). `knowledge list --json` does not carry
+   `sha256`; `aidlc engine knowledge show <id> --json` does, if you need it
+   again.
 4. Write a summary of at most five sentences to
    `.project-overview-summary.txt` in this stage's record dir, then persist it:
-   `{{INVOKE}} engine knowledge summarize <id> --text-file <that file> --source-revision <sha256> --tags project-overview`
+   `aidlc engine knowledge summarize <id> --text-file <that file> --source-revision <sha256> --tags project-overview`
 5. Keep the document space-wide: do not `associate` it with an intent.
+6. Write the digest to
+   `aidlc/spaces/<active-space>/knowledge/aidlc-shared/project-overview.md`,
+   replacing the previous one. Keep it under 1 KB and in exactly this shape:
 
-The published copy is in place before the approval gate opens, so the human
-reviews exactly what later intents will read. On **Approve**, write nothing
-more — do not touch either copy after approval. On **Request Changes**, revise
-the snapshot, publish and index again, and re-present. A workflow abandoned at
+   ```markdown
+   # Project overview — <active-space> · digest
+
+   <the same summary as step 4>
+
+   - Full overview: `aidlc/spaces/<active-space>/knowledge/documents/project-overview/project-overview.md`.
+     Read it when your work needs the project as a whole — purpose, scope,
+     architecture, decisions so far. Cite it, not this digest.
+   - Updated at the <phase> gate of intent `<intent slug>` on <YYYY-MM-DD>.
+     That intent's audit trail says whether the gate was approved.
+   ```
+
+   When `onboard` said `already`, the overview did not change: leave the digest
+   as it is if it already matches, and write it if it is missing.
+
+The published copy and the digest are in place before the approval gate opens,
+so the human reviews exactly what later intents will read. On **Approve**,
+write nothing more — do not touch any of the three copies after approval. On
+**Request Changes**, revise the snapshot, publish, index and write the digest
+again, and re-present. A workflow abandoned at
 this gate leaves an unapproved update published; the header names the intent
 and phase, and that intent's audit trail shows the gate was never approved.

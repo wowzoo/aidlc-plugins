@@ -54,7 +54,7 @@ scopes:
   - security-patch
   - workshop
 inputs: This intent's Construction artifacts (every Unit's code summary included), the space CodeKB when present, and the space's published project overview
-outputs: project-overview-construction-snapshot.md (under this stage's record dir, engine-resolved) and the published overview at aidlc/spaces/<active-space>/knowledge/documents/project-overview/project-overview.md
+outputs: project-overview-construction-snapshot.md (under this stage's record dir, engine-resolved), the published overview at aidlc/spaces/<active-space>/knowledge/documents/project-overview/project-overview.md, and its digest at aidlc/spaces/<active-space>/knowledge/aidlc-shared/project-overview.md
 ---
 
 # Project Overview — Construction
@@ -101,21 +101,27 @@ Decision Log and Intent History, and end with `## Sources`.
 Follow `overview-method.md` § Publish and index, including the concurrent-intent
 check before writing.
 
-### Step 5: Open the Approval Gate
+### Step 5: Completion Handoff
 
-Run `{{INVOKE}} engine orchestrate report --stage project-overview-construction --result awaiting-approval`.
+Hand completion to `stage-protocol.md` via
+`aidlc engine orchestrate report --stage project-overview-construction --result <outcome>`.
+That `report` call owns every lifecycle transition and advancement; never perform one in prose, and never narrate this bookkeeping to the user.
+The protocol fixes the order: announce and summarise first, run the learnings
+ritual when the directive lists it, and only then open the gate with
+`--result awaiting-approval` and ask the approval question.
 
 ### Step 6: Present Completion & Request Approval
 
 Completion emoji: :compass:
-Review paths: the snapshot in this stage's engine-resolved record dir, and the
-published overview (already in place — say so).
+Review paths: the snapshot in this stage's engine-resolved record dir, the
+published overview, and its digest (both already in place — say so).
 Standard 2-option approval (Approve / Request Changes).
 STOP for the human response. Report Approve with
 `--result approved --user-input "<exact choice>"`; report
-Request Changes with `--result rejected --user-input "<feedback>"`, revise the
-snapshot, publish and index again, then report `--result revised` before
-re-presenting.
+Request Changes with `--result rejected --user-input "Request Changes"` (the
+engine records the human's own words from this chat as the feedback; when it
+kept none, pass what they asked for in `--reason`), revise the snapshot,
+publish and index again, then report `--result revised` before re-presenting.
 
 ## Sensors
 
@@ -126,11 +132,8 @@ that wants the exact heading set enforced can drop the template as
 
 ## Learn
 
-While running this stage, record observations in the engine-created
-`<record>/<phase>/<stage>/memory.md`. Treat it as an output-only target:
-never read, probe, create, or initialize it. Follow the active harness's
-diary-write discipline when inserting entries under Interpretations,
-Deviations, Tradeoffs, and Open questions, each with an ISO 8601 timestamp.
-
-Stage files are immutable framework artefacts — the ritual writes into the
-harness, not into this file.
+When `directive.protocol_modules` lists `learnings`, follow
+`stage-protocol-learnings.md`: keep the diary at `directive.memory_path` while
+working and run the ritual before the approval gate, applying its bootstrap,
+`single: true`, per-unit, and gate-revision exemptions. When the module is absent,
+skip both the diary and the ritual.

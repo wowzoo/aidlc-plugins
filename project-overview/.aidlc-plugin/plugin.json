@@ -1,6 +1,6 @@
 {
   "name": "project-overview",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Keeps one cumulative project overview per space. A stage at the end of each phase folds that phase's intent, requirements, domain design and ADRs, contracts, technology decisions, test results and operations into the overview, publishes it to the space's knowledge documents, and indexes it in DocumentKB so the next intent's agents can cite it.",
   "author": {
     "name": "Keehyun Jang"
