@@ -1,0 +1,17 @@
+{
+  "name": "codekb-mcp-plugin",
+  "version": "0.1.3",
+  "description": "Let AI-DLC use the CodeKB service (the code knowledge base reached through its MCP server, `code-knowledge-base`) on an existing codebase. Not the reverse-engineering store that AI-DLC also calls CodeKB: that store stays the only structural surface later stages consume, and this plugin never writes it. At reverse-engineering, the conductor matches each repo the intent scans to its CodeKB space (git URL, or the space the person named), checks the indexed commit against the repo's HEAD, and writes one orientation file per repo into space knowledge so delegated agents see it without MCP access; the Developer and Architect briefs name it as an INDEX. At requirements-analysis and functional-design (both inline), the conductor localizes the change with semantic search, confirms each candidate in the local source, walks incoming dependents for the impact, and carries the confirmed list into the stage's own questions and artifacts. Overlay-only: four contributions and one shared rules file (knowledge/aidlc-shared/codekb-mcp.md). The MCP server entry is installed by prerequisites/INSTALL.md after compose; from AI-DLC 2.11.1 every Kiro agent sees it (on Kiro CLI V2 after one aidlc config), each call asking first. Conditional throughout: with no server, no login or no matching space, every step is skipped and the stage runs as stock.",
+  "author": {
+    "name": "wowzoo"
+  },
+  "dependencies": [
+    "core"
+  ],
+  "aidlc": {
+    "contributes": {
+      "overlays": "contributions/",
+      "knowledge": "knowledge/"
+    }
+  }
+}
