@@ -44,7 +44,7 @@ FRAGMENT_RE = re.compile(r"^## fragment:\s*(before|after)-step:(\d+)\s*$", re.MU
 
 
 def engine_dir(tree: Path) -> str:
-    for cand in (".kiro", ".claude"):
+    for cand in (".kiro", ".claude", ".codex"):
         if (tree / cand / "aidlc-common").is_dir():
             return cand
     sys.exit(f"엔진 디렉터리를 못 찾음: {tree}")
