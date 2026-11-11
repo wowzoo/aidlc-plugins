@@ -1,0 +1,3 @@
+resources/
+scripts/__pycache__/
+*.zip
